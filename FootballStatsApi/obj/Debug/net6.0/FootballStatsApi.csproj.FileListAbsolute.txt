@@ -67,3 +67,9 @@ C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\obj\Deb
 C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\obj\Debug\net6.0\ref\FootballStatsApi.dll
 C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\obj\Debug\net6.0\FootballStatsApi.pdb
 C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\obj\Debug\net6.0\FootballStatsApi.genruntimeconfig.cache
+C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\bin\Debug\net6.0\System.Web.Cors.dll
+C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\bin\Debug\net6.0\System.Net.Http.Formatting.dll
+C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\bin\Debug\net6.0\System.Web.Http.dll
+C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\bin\Debug\net6.0\System.Web.Http.Cors.dll
+C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\bin\Debug\net6.0\Newtonsoft.Json.dll
+C:\Users\argel.battassini\source\repos\FootballStatsApi\FootballStatsApi\bin\Debug\net6.0\Newtonsoft.Json.Bson.dll

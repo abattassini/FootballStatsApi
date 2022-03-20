@@ -1,6 +1,7 @@
 using FootballStatsApi.Data.Context;
 using FootballStatsApi.Model;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.EntityFrameworkCore;
 
 namespace FootballStatsApi.Controllers
@@ -24,15 +25,42 @@ namespace FootballStatsApi.Controllers
             _context = context;
         }
 
-        //[HttpGet(Name = "GetTeams")]
-        //public IEnumerable<string> GetTeams()
-        //{
-        //    var teams = _context.Teams.Select(s => s.Name).ToList();
-        //    return teams;
-        //}
+        [HttpGet("GetGroupOfMatchesPercentages")]
+        public GroupOfMatchesPercentages GetGroupOfMatchesPercentages()
+        {
+            var allMatchesStats = _context.Matches
+                       .Where(x => x.Date >= new DateTime(2018, 01, 01) && x.Date <= new DateTime(2020, 12, 30))
+                       .GroupBy(x => true)
+                       .Select(x => new
+                       {
+                           GoalsScoredHome = x.Sum(y => y.HomeTeamGoals),
+                           GoalsScoredAway = x.Sum(y => y.AwayTeamGoals),
+                           MatchesConsidered = x.Sum(y => 1),
+                           StartDate = new DateTime(2018, 01, 01),
+                           FinalDate = new DateTime(2020, 12, 30)
+                       }).ToList();
 
-        [HttpGet(Name = "GetTest")]
-        public Dictionary<int, MatchdayScore> GetTable(string seasonYear, int nextMatchday, int matchdaysToConsider)
+            var response = new GroupOfMatchesPercentages();
+
+            if (allMatchesStats.Count > 0) {
+                response = new GroupOfMatchesPercentages
+                {
+                    GoalsScoredHome = allMatchesStats.First().GoalsScoredHome,
+                    GoalsScoredAway = allMatchesStats.First().GoalsScoredAway,
+                    HomeScoringPercentage = Convert.ToDouble(allMatchesStats.First().GoalsScoredHome) / allMatchesStats.First().MatchesConsidered,
+                    AwayScoringPercentage = Convert.ToDouble(allMatchesStats.First().GoalsScoredAway) / allMatchesStats.First().MatchesConsidered,
+                    MatchesConsidered = allMatchesStats.First().MatchesConsidered,
+                    StartDate = allMatchesStats.First().StartDate,
+                    FinalDate = allMatchesStats.First().FinalDate,
+                };
+            }
+
+            return response;
+        }
+
+        [EnableCors("FootballStatsCorsPolicy")]
+        [HttpGet("GetTeamsMatchdayScores")]
+        public GetTeamsStatsResponse GetTeamsMatchdayScores(string seasonYear, int nextMatchday, int matchdaysToConsider)
         {
             var wholeSeasonStats = GetGroupOfMatchesStats(seasonYear, 1, nextMatchday - 1);
             var lastMatchesStats = GetGroupOfMatchesStats(seasonYear, nextMatchday - matchdaysToConsider, nextMatchday - 1);
@@ -45,6 +73,8 @@ namespace FootballStatsApi.Controllers
 
             Dictionary<int, MatchdayScore> matchdayScores = new Dictionary<int, MatchdayScore>();
 
+            List<double> scoringScores = new List<double>();
+
             foreach (var match in nextMatchdayMatches)
             {
                 var homeTeamWholeSeasonStats = wholeSeasonStats.First(x => x.TeamId == match.HomeTeamId);
@@ -53,11 +83,14 @@ namespace FootballStatsApi.Controllers
                 var homeTeamLastMatchesStats = lastMatchesStats.First(x => x.TeamId == match.HomeTeamId);
                 var awayTeamLastMatchesStats = lastMatchesStats.First(x => x.TeamId == match.AwayTeamId);
 
-                var homeTeamScoringScore = (homeTeamWholeSeasonStats.GoalsScored * awayTeamWholeSeasonStats.GoalsConceded * 0.5) / (nextMatchday - 1)
-                                           + (homeTeamLastMatchesStats.GoalsScored * awayTeamWholeSeasonStats.GoalsConceded * 0.5) / matchdaysToConsider;
+                var homeTeamScoringScore = (homeTeamWholeSeasonStats.GoalsScored * awayTeamWholeSeasonStats.GoalsConceded * 0.5) / homeTeamWholeSeasonStats.MatchesQty
+                                           + (homeTeamLastMatchesStats.GoalsScored * awayTeamWholeSeasonStats.GoalsConceded * 0.5) / homeTeamLastMatchesStats.MatchesQty;
 
-                var awayTeamScoringScore = ((awayTeamWholeSeasonStats.GoalsScored * homeTeamWholeSeasonStats.GoalsConceded * 0.5) / (nextMatchday - 1)
-                                           + (awayTeamLastMatchesStats.GoalsScored * homeTeamLastMatchesStats.GoalsConceded * 0.5) / matchdaysToConsider) * 0.9;
+                var awayTeamScoringScore = ((awayTeamWholeSeasonStats.GoalsScored * homeTeamWholeSeasonStats.GoalsConceded * 0.5) / awayTeamWholeSeasonStats.MatchesQty
+                                           + (awayTeamLastMatchesStats.GoalsScored * homeTeamLastMatchesStats.GoalsConceded * 0.5) / awayTeamLastMatchesStats.MatchesQty) * 0.65;
+
+                scoringScores.Add((homeTeamScoringScore != null ? (double)homeTeamScoringScore : 0));
+                scoringScores.Add((homeTeamScoringScore != null ? (double)homeTeamScoringScore : 0));
 
                 if (!matchdayScores.ContainsKey(match.HomeTeamId))
                 {
@@ -67,6 +100,12 @@ namespace FootballStatsApi.Controllers
                         TeamName = homeTeamWholeSeasonStats.TeamName,
                         ScoringScore = (homeTeamScoringScore != null ? (double)homeTeamScoringScore : -1),
                         ConcedingScore = (awayTeamScoringScore != null ? (double)awayTeamScoringScore : -1),
+                        GoalsScoredWholeSeason = homeTeamWholeSeasonStats.GoalsScored != null ? Convert.ToInt32(homeTeamWholeSeasonStats.GoalsScored) : 0,
+                        GoalsConcededWholeSeason = homeTeamWholeSeasonStats.GoalsConceded != null ? Convert.ToInt32(homeTeamWholeSeasonStats.GoalsConceded) : 0,
+                        GoalsScoredRecently = homeTeamLastMatchesStats.GoalsScored != null ? Convert.ToInt32(homeTeamLastMatchesStats.GoalsScored) : 0,
+                        GoalsConcededRecently = homeTeamLastMatchesStats.GoalsConceded != null ? Convert.ToInt32(homeTeamLastMatchesStats.GoalsConceded) : 0,
+                        OpponentId = match.AwayTeamId,
+                        PlaysAtHome = true,                      
                     });
                 }
 
@@ -78,6 +117,12 @@ namespace FootballStatsApi.Controllers
                         TeamName = awayTeamWholeSeasonStats.TeamName,
                         ScoringScore = (awayTeamScoringScore != null ? (double)awayTeamScoringScore : -1),
                         ConcedingScore = (homeTeamScoringScore != null ? (double)homeTeamScoringScore : -1),
+                        GoalsScoredWholeSeason = awayTeamWholeSeasonStats.GoalsScored != null ? Convert.ToInt32(awayTeamWholeSeasonStats.GoalsScored) : 0,
+                        GoalsConcededWholeSeason = awayTeamWholeSeasonStats.GoalsConceded != null ? Convert.ToInt32(awayTeamWholeSeasonStats.GoalsConceded) : 0,
+                        GoalsScoredRecently = awayTeamLastMatchesStats.GoalsScored != null ? Convert.ToInt32(awayTeamLastMatchesStats.GoalsScored) : 0,
+                        GoalsConcededRecently = awayTeamLastMatchesStats.GoalsConceded != null ? Convert.ToInt32(awayTeamLastMatchesStats.GoalsConceded) : 0,
+                        OpponentId = match.HomeTeamId,
+                        PlaysAtHome = false,
                     });
                 }
 
@@ -87,7 +132,20 @@ namespace FootballStatsApi.Controllers
                 }
             }
 
-            return matchdayScores;
+            var matchdayScoresList = matchdayScores.Values.ToList();
+
+            foreach (MatchdayScore matchdayScore in matchdayScoresList)
+            {
+                matchdayScore.ScoringScore = matchdayScore.ScoringScore * (100 / scoringScores.Max());
+                matchdayScore.ConcedingScore = matchdayScore.ConcedingScore * (100 / scoringScores.Max());
+            }
+
+            return new GetTeamsStatsResponse
+            {
+                MatchdayScores = matchdayScoresList,
+                Matchday = nextMatchday.ToString(),
+                Season = seasonYear,
+            };
         }
 
         private IQueryable<GroupOfMatchesStats> GetGroupOfMatchesStats(string seasonYear, int startMatchday, int finalMatchday)
