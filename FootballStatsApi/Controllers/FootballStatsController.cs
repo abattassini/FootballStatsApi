@@ -29,8 +29,10 @@ namespace FootballStatsApi.Controllers
         [HttpGet("GetGoalsOfEachMatchday")]
         public GetGoalsOfEachMatchdayResponse GetGoalsOfEachMatchday(int seasonYear)
         {
+            var seasonInfo = Utils.Utils.GetSeasonByYear(seasonYear.ToString());
+
             var matchdayGoals = _context.Matches
-                       .Where(x => x.Date >= new DateTime(seasonYear, 01, 01) && x.Date <= new DateTime(seasonYear, 12, 30))
+                       .Where(x => x.Date >= seasonInfo.StartDate && x.Date <= seasonInfo.FinalDate)
                        .GroupBy(x => x.Matchday)
                        .Select(x => new MatchdayGoals
                        {
@@ -42,6 +44,96 @@ namespace FootballStatsApi.Controllers
             var response = new GetGoalsOfEachMatchdayResponse
             {
                 MatchdayGoals = matchdayGoals,
+                SeasonYear = seasonYear.ToString()
+            };
+
+            return response;
+        }
+
+        [EnableCors("FootballStatsCorsPolicy")]
+        [HttpGet("GetStatsEachTeamSeason")]
+        public GetStatsEachTeamSeasonResponse GetStatsEachTeamSeason(int seasonYear)
+        {
+            var seasonInfo = Utils.Utils.GetSeasonByYear(seasonYear.ToString());
+
+            var homeGoals = (from match in _context.Matches
+                            where match.Date >= seasonInfo.StartDate && match.Date <= seasonInfo.FinalDate
+                             group match by match.HomeTeamId into g
+                            select new
+                            {
+                                TeamId = g.Key,
+                                GoalsScored = g.Sum(x => x.HomeTeamGoals),
+                                GoalsConceded = g.Sum(x => x.AwayTeamGoals),
+                                Victories = g.Sum(x => x.HomeTeamGoals > x.AwayTeamGoals ? 1 : 0),
+                                Ties = g.Sum(x => x.HomeTeamGoals == x.AwayTeamGoals ? 1 : 0),
+                                Losses = g.Sum(x => x.HomeTeamGoals < x.AwayTeamGoals ? 1 : 0),
+
+                            }).ToList();
+
+            var awayGoals = (from match in _context.Matches
+                            where match.Date >= seasonInfo.StartDate && match.Date <= seasonInfo.FinalDate
+                             group match by match.AwayTeamId into g
+                            select new
+                            {
+                                TeamId = g.Key,
+                                GoalsScored = g.Sum(x => x.AwayTeamGoals),
+                                GoalsConceded = g.Sum(x => x.HomeTeamGoals),
+                                Victories = g.Sum(x => x.AwayTeamGoals > x.HomeTeamGoals ? 1 : 0),
+                                Ties = g.Sum(x => x.HomeTeamGoals == x.AwayTeamGoals ? 1 : 0),
+                                Losses = g.Sum(x => x.AwayTeamGoals < x.HomeTeamGoals ? 1 : 0),
+                            }).ToList();
+
+
+            var teamsGoals = homeGoals.Join(awayGoals,
+                                            x => x.TeamId,
+                                            y => y.TeamId,
+                                            (x, y) => new TeamStatsSeason
+                                            {
+                                                TeamId = x.TeamId,
+                                                GoalsScoredHome = x.GoalsScored,
+                                                GoalsScoredAway = y.GoalsScored,
+                                                GoalsScoredTotal = x.GoalsScored + y.GoalsScored,
+                                                GoalsConcededHome = x.GoalsConceded,
+                                                GoalsConcededAway = y.GoalsConceded,
+                                                GoalsConcededTotal = x.GoalsConceded + y.GoalsConceded,
+                                                VictoriesHome = x.Victories,
+                                                VictoriesAway = y.Victories,
+                                                VictoriesTotal = x.Victories + y.Victories,
+                                                TiesHome = x.Ties,
+                                                TiesAway = y.Ties,
+                                                TiesTotal = x.Ties + y.Ties,
+                                                LossesHome = x.Losses,
+                                                LossesAway = y.Losses,
+                                                LossesTotal = x.Losses + y.Losses
+                                            });
+
+            teamsGoals = teamsGoals.Join(_context.Teams,
+                                     x => x.TeamId,
+                                     y => y.Id,
+                                     (x, y) => new TeamStatsSeason
+                                     {
+                                         TeamId = x.TeamId,
+                                         TeamName = y.Name,
+                                         GoalsScoredHome = x.GoalsScoredHome,
+                                         GoalsScoredAway = x.GoalsScoredAway,
+                                         GoalsScoredTotal = x.GoalsScoredTotal,
+                                         GoalsConcededHome = x.GoalsConcededHome,
+                                         GoalsConcededAway = x.GoalsConcededAway,
+                                         GoalsConcededTotal = x.GoalsConcededTotal,
+                                         VictoriesHome = x.VictoriesHome,
+                                         VictoriesAway = x.VictoriesAway, 
+                                         VictoriesTotal = x.VictoriesTotal,
+                                         TiesHome = x.TiesHome,
+                                         TiesAway = x.TiesAway,
+                                         TiesTotal = x.TiesTotal,
+                                         LossesHome = x.LossesHome,
+                                         LossesAway = x.LossesAway,
+                                         LossesTotal = x.LossesTotal,
+                                     }); // TODO: Find a way to do this without having to rewrite all the object.
+
+            var response = new GetStatsEachTeamSeasonResponse
+            {
+                StatsEachTeam = teamsGoals.ToList(),
                 SeasonYear = seasonYear.ToString()
             };
 
