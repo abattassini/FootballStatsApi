@@ -25,35 +25,25 @@ namespace FootballStatsApi.Controllers
             _context = context;
         }
 
-        [HttpGet("GetGroupOfMatchesPercentages")]
-        public GroupOfMatchesPercentages GetGroupOfMatchesPercentages()
+        [EnableCors("FootballStatsCorsPolicy")]
+        [HttpGet("GetGoalsOfEachMatchday")]
+        public GetGoalsOfEachMatchdayResponse GetGoalsOfEachMatchday(int seasonYear)
         {
-            var allMatchesStats = _context.Matches
-                       .Where(x => x.Date >= new DateTime(2018, 01, 01) && x.Date <= new DateTime(2020, 12, 30))
-                       .GroupBy(x => true)
-                       .Select(x => new
+            var matchdayGoals = _context.Matches
+                       .Where(x => x.Date >= new DateTime(seasonYear, 01, 01) && x.Date <= new DateTime(seasonYear, 12, 30))
+                       .GroupBy(x => x.Matchday)
+                       .Select(x => new MatchdayGoals
                        {
                            GoalsScoredHome = x.Sum(y => y.HomeTeamGoals),
                            GoalsScoredAway = x.Sum(y => y.AwayTeamGoals),
-                           MatchesConsidered = x.Sum(y => 1),
-                           StartDate = new DateTime(2018, 01, 01),
-                           FinalDate = new DateTime(2020, 12, 30)
+                           Matchday = x.Key
                        }).ToList();
 
-            var response = new GroupOfMatchesPercentages();
-
-            if (allMatchesStats.Count > 0) {
-                response = new GroupOfMatchesPercentages
-                {
-                    GoalsScoredHome = allMatchesStats.First().GoalsScoredHome,
-                    GoalsScoredAway = allMatchesStats.First().GoalsScoredAway,
-                    HomeScoringPercentage = Convert.ToDouble(allMatchesStats.First().GoalsScoredHome) / allMatchesStats.First().MatchesConsidered,
-                    AwayScoringPercentage = Convert.ToDouble(allMatchesStats.First().GoalsScoredAway) / allMatchesStats.First().MatchesConsidered,
-                    MatchesConsidered = allMatchesStats.First().MatchesConsidered,
-                    StartDate = allMatchesStats.First().StartDate,
-                    FinalDate = allMatchesStats.First().FinalDate,
-                };
-            }
+            var response = new GetGoalsOfEachMatchdayResponse
+            {
+                MatchdayGoals = matchdayGoals,
+                SeasonYear = seasonYear.ToString()
+            };
 
             return response;
         }
