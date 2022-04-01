@@ -10,11 +10,6 @@ namespace FootballStatsApi.Controllers
     [Route("[controller]")]
     public class FootballStatsController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
         private readonly ILogger<FootballStatsController> _logger;
 
         public readonly FootballStatsContext _context;
@@ -56,9 +51,10 @@ namespace FootballStatsApi.Controllers
         {
             var seasonInfo = Utils.Utils.GetSeasonByYear(seasonYear.ToString());
 
+
             var homeGoals = (from match in _context.Matches
                             where match.Date >= seasonInfo.StartDate && match.Date <= seasonInfo.FinalDate
-                             group match by match.HomeTeamId into g
+                            group match by match.HomeTeamId into g
                             select new
                             {
                                 TeamId = g.Key,
@@ -71,8 +67,8 @@ namespace FootballStatsApi.Controllers
                             }).ToList();
 
             var awayGoals = (from match in _context.Matches
-                            where match.Date >= seasonInfo.StartDate && match.Date <= seasonInfo.FinalDate
-                             group match by match.AwayTeamId into g
+                            where match.Date >= seasonInfo.StartDate && match.Date <= new DateTime(seasonYear, 12, 30)
+                            group match by match.AwayTeamId into g
                             select new
                             {
                                 TeamId = g.Key,
@@ -133,7 +129,7 @@ namespace FootballStatsApi.Controllers
 
             var response = new GetStatsEachTeamSeasonResponse
             {
-                StatsEachTeam = teamsGoals.ToList(),
+                StatsEachTeam = teamsGoals.OrderBy(o => o.TeamName).ToList(),
                 SeasonYear = seasonYear.ToString()
             };
 
