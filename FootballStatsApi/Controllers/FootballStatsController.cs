@@ -67,8 +67,8 @@ namespace FootballStatsApi.Controllers
                             }).ToList();
 
             var awayGoals = (from match in _context.Matches
-                            where match.Date >= seasonInfo.StartDate && match.Date <= new DateTime(seasonYear, 12, 30)
-                            group match by match.AwayTeamId into g
+                             where match.Date >= seasonInfo.StartDate && match.Date <= seasonInfo.FinalDate
+                             group match by match.AwayTeamId into g
                             select new
                             {
                                 TeamId = g.Key,

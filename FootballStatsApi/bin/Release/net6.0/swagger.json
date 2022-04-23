@@ -1,0 +1,283 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "FootballStatsApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+    "version": "1.0"
+  },
+  "paths": {
+    "/FootballStats/GetGoalsOfEachMatchday": {
+      "get": {
+        "tags": [
+          "FootballStats"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "seasonYear",
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetGoalsOfEachMatchdayResponse"
+            }
+          }
+        }
+      }
+    },
+    "/FootballStats/GetStatsEachTeamSeason": {
+      "get": {
+        "tags": [
+          "FootballStats"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "seasonYear",
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetStatsEachTeamSeasonResponse"
+            }
+          }
+        }
+      }
+    },
+    "/FootballStats/GetTeamsMatchdayScores": {
+      "get": {
+        "tags": [
+          "FootballStats"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "seasonYear",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "nextMatchday",
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "in": "query",
+            "name": "matchdaysToConsider",
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetTeamsStatsResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "GetGoalsOfEachMatchdayResponse": {
+      "type": "object",
+      "properties": {
+        "matchdayGoals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MatchdayGoals"
+          }
+        },
+        "seasonYear": {
+          "type": "string"
+        }
+      }
+    },
+    "GetStatsEachTeamSeasonResponse": {
+      "type": "object",
+      "properties": {
+        "statsEachTeam": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TeamStatsSeason"
+          }
+        },
+        "seasonYear": {
+          "type": "string"
+        }
+      }
+    },
+    "GetTeamsStatsResponse": {
+      "type": "object",
+      "properties": {
+        "matchdayScores": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MatchdayScore"
+          }
+        },
+        "season": {
+          "type": "string"
+        },
+        "matchday": {
+          "type": "string"
+        }
+      }
+    },
+    "MatchdayGoals": {
+      "type": "object",
+      "properties": {
+        "goalsScoredHome": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsScoredAway": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "matchday": {
+          "format": "int32",
+          "type": "integer"
+        }
+      }
+    },
+    "MatchdayScore": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "teamName": {
+          "type": "string"
+        },
+        "scoringScore": {
+          "format": "double",
+          "type": "number"
+        },
+        "concedingScore": {
+          "format": "double",
+          "type": "number"
+        },
+        "goalsScoredWholeSeason": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsConcededWholeSeason": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsScoredRecently": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsConcededRecently": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "opponentId": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "playsAtHome": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TeamStatsSeason": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "teamName": {
+          "type": "string"
+        },
+        "goalsScoredHome": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "victoriesHome": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "victoriesAway": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "victoriesTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "lossesHome": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "lossesAway": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "lossesTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "tiesHome": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "tiesAway": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "tiesTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsScoredAway": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsScoredTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsConcededHome": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsConcededAway": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "goalsConcededTotal": {
+          "format": "int32",
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
